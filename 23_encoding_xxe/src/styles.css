@@ -1,0 +1,40 @@
+.generate_form {
+  background-color:#F1F1F1;
+  border:2px solid #DDD;
+  margin:0 auto;
+  width:80%;
+  align:center;
+}
+
+.btn {
+   padding:3px;padding-left:10px;padding-right:10px;font-weight:bold;
+}
+
+img {
+     border:0px;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+background-image:url('back_mtl.jpg');
+background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+.container
+{
+    margin:0px 100px 0px 100px;
+    background-color: rgba(184, 184, 204, 0.8);
+    border: 3px solid #FFFFFF;
+    padding:18px;
+    border-radius: 50px;
+}
+
+h1,h3 {
+text-shadow: 2px 2px #FFFFFF;
+}
+
+a:link,a:visited {
+color:#000;
+
+} 

