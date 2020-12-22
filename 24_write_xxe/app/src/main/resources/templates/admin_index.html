@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html layout:decorator="fragments/layout" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <title>Administration Section</title>
+
+</head>
+<body>
+
+<div class="container" layout:fragment="content">
+
+    <div th:if="${message != null}">
+        <div style="padding: 5px;background-color:#638CB5;color:#FFF">
+            <span th:text="${message}"></span>
+        </div>
+    </div>
+
+    <a href="./upload">Upload a new book</a>
+</div>
+
+
+</body>
+</html>

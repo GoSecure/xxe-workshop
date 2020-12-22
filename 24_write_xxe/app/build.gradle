@@ -1,0 +1,61 @@
+buildscript {
+    ext {
+        springBootVersion = '1.4.0.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.5")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'spring-boot'
+apply plugin: 'org.sonarqube'
+
+jar {
+    baseName = 'books'
+    version = '0.0.1-SNAPSHOT'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+    compile('org.springframework.boot:spring-boot-starter-security')
+    //compile('org.springframework.boot:spring-boot-starter-data-jpa')
+
+    compile('org.thymeleaf.extras:thymeleaf-extras-java8time')
+    compile('org.thymeleaf.extras:thymeleaf-extras-springsecurity4')
+
+    //compile('org.springframework.boot:spring-boot-starter-actuator')
+    //compile('org.springframework.boot:spring-boot-starter-remote-shell')
+
+    compile('com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:r239')
+
+    compile('org.webjars:bootstrap:3.3.6')
+    compile('org.webjars:jquery:2.2.1')
+
+    compile('commons-io:commons-io:2.5')
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectName", "Books"
+        property "sonar.projectVersion", "0.0.1-SNAPSHOT"
+        property "sonar.projectKey", "net.gosecure:books"
+    }
+}
