@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html layout:decorator="fragments/layout" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <title>RSS Feed Preview</title>
+</head>
+<body>
+
+<div class="container" layout:fragment="content">
+    <div class="hero-unit">
+        <h1>News</h1>
+
+        <div th:each="i : ${rssItems}">
+            <h2><a target="_blank" th:href="${i.url}" th:text="${i.title}">No title</a> </h2>
+            <bloquote><p th:utext="${i.description}"></p></bloquote>
+        </div>
+    </div>
+</div>
+</body>
+</html>

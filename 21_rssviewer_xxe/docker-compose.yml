@@ -1,0 +1,9 @@
+version: '2'
+services:
+  web:
+    build: .
+    ports:
+     - "8021:8021"
+    volumes:
+      - ./secret:/secret
+      - ./webapps:/usr/local/tomcat/webapps

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html layout:decorator="fragments/layout" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <title>Home</title>
+
+
+    <script>
+        function loadSuggestion(url) {
+            document.forms[0].url.value = url;
+        }
+    </script>
+</head>
+<body>
+
+<div class="container" layout:fragment="content">
+    <div class="hero-unit">
+
+
+
+        <h2>Start reading now..</h2>
+
+
+        <img src="/images/user.gif"/>
+
+
+        <p>
+            <form action="#" th:action="@{/preview}" th:object="${rssForm}" method="post">
+                <label th:for="url">URL :</label>
+                <input type="text" th:field="*{url}" style="width:100%" />
+                <br/>
+                <br/>
+                <input type="submit" value="Read" class="btn btn-large btn-success"/>
+            </form>
+        </p>
+
+
+
+        <h2>Popular news feeds</h2>
+
+        <ul>
+            <li><a href="javascript:loadSuggestion('https://www.reddit.com/r/netsec/.rss')">Reddit Netsec</a></li>
+            <li><a href="javascript:loadSuggestion('https://www.wired.com/category/gear/feed/')">Wired Magazine</a></li>
+            <li><a href="javascript:loadSuggestion('https://motherboard.vice.com/en_ca/rss')">Motherboard (Vice)</a></li>
+        </ul>
+
+
+
+
+    </div>
+</div>
+</body>
+</html>

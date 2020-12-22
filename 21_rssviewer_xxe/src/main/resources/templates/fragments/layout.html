@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <title layout:title-pattern="$DECORATOR_TITLE - $CONTENT_TITLE">Simple Atom Viewer</title>
+
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="shortcut icon" href="/images/news-icon.png"/>
+    <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.6/css/bootstrap.min.css"
+          th:href="@{/webjars/bootstrap/3.3.6/css/bootstrap.min.css}"
+          rel="stylesheet" media="screen" />
+    <link href="../static/css/core.css"
+          th:href="@{/css/core.css}"
+          rel="stylesheet" media="screen" />
+    <script src="http://cdn.jsdelivr.net/webjars/jquery/2.2.1/jquery.min.js"
+            th:src="@{/webjars/jquery/2.2.1/jquery.min.js}"></script>
+
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar navbar-inverse navbar-fixed-top" th:fragment="header">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Simple Atom Viewer</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#" th:href="@{/}">Home</a></li>
+            </ul>
+        </div>
+        <!--/.nav-collapse -->
+    </div>
+</div>
+
+
+<div class="container">
+    <div layout:fragment="content">
+        <p>This will be replace</p>
+    </div>
+<br/><br/><br/><br/>
+
+    <div>
+        &copy; 2019 Atom News Viewer
+    </div>
+
+</div>
+
+
+</body>
+</html>
