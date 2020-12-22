@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+        "http://struts.apache.org/dtds/struts-2.0.dtd">
+<struts>
+
+    <constant name="struts.devMode" value="true" />
+    <constant name="struts.action.extension" value="action"/>
+
+    <package name="test" extends="struts-default">
+        <action name="convertImage" class="com.h3xstream.webxxe.actions.CovertImageAction" method="execute">
+            <result type="stream">
+                <param name="contentType">image/png</param>
+                <param name="inputName">inputStream</param>
+            </result>
+        </action>
+    </package>
+
+</struts>
