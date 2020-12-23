@@ -1,0 +1,18 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2020-12-23T10:49:44-05:00",
+  "id": "xxe-workshop",
+  "duration": 101,
+  "title": "Advanced XXE Exploitation",
+  "authors": "Philippe Arteau",
+  "summary": "test",
+  "source": "index.md",
+  "theme": "",
+  "status": null,
+  "category": null,
+  "tags": [],
+  "url": "xxe-workshop"
+}

