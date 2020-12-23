@@ -50,7 +50,7 @@
 <aside class="special"><p>Exercises are independent. Feel free to do them in the order that you prefer.</p>
 </aside>
 <h2 is-upgraded>Requirements</h2>
-<p>The requirement is to have a to have an HTTP interception proxy installed.</p>
+<p>The first requirement is to have a to have an HTTP interception proxy installed.</p>
 <ul>
 <li><a href="https://portswigger.net/burp" target="_blank">Burp Suite</a></li>
 <li><a href="https://portswigger.net/burp" target="_blank">OWASP ZAP</a></li>
@@ -61,7 +61,7 @@
 <li><a href="https://www.oracle.com/java/technologies/javase-jdk11-downloads.html" target="_blank">Java 8+</a></li>
 <li><a href="https://maven.apache.org/" target="_blank">Maven</a> (<code>apt install maven</code>)</li>
 </ul>
-<aside class="warning"><p>If you only have a web browser, you won&#39;t be able to reproduce the steps provided. You can still follow the workshop by reading the content and watching the demonstrations.</p>
+<aside class="warning"><p>If you <strong>only</strong> have a web browser, you won&#39;t be able to reproduce the steps provided. You can still follow the workshop by reading the content and watching the demonstrations.</p>
 </aside>
 <h2 is-upgraded>Deploying Test Applications</h2>
 <p>In order to do the exercise, you will need to run the <a href="https://github.com/GoSecure/xxe-workshop" target="_blank">lab applications</a> by yourself. All applications were built with a docker container recipe. This should make the deployment easier.</p>
@@ -85,12 +85,12 @@
 <h2 is-upgraded>What are XML entities?</h2>
 <p>XML entities are reference to XML data inside of XML documents. We are mentioning XML data because it can be a literal string, XML tags or any legal XML syntax where it is inserted.</p>
 <p><strong>Entity in HTML are used for special characters</strong></p>
-<p class="image-container"><img alt="Entity 1" src="img\3fd0637556ef955d.png"></p>
+<p class="image-container"><img alt="Entity in HTML" src="img\e55c3dbfaa9446fb.png"></p>
 <p><strong>Entity is being used for a repeated pattern</strong></p>
-<p class="image-container"><img alt="Entity 2" src="img\e55c3dbfaa9446fb.png"></p>
+<p class="image-container"><img alt="Entity use for repeated pattern" src="img\3fd0637556ef955d.png"></p>
 <h3 is-upgraded>SYSTEM or External entities</h3>
 <p class="image-container"><img alt="Malicious XXE payload" src="img\623e88b9e2ba797a.png"></p>
-<p>When the keyword SYSTEM is added to an entity, it will attempt to load content from the specified URL. The value between quote is the URL. For XML parsing done in a small script execute locally, this seems like a nice feature. However, when the parsing is done server side, the URLs from SYSTEM entities are also resolved on the server. A malicious user could point to a file hosted on the remote server. If the server return the parsing result, the user will suddenly reveal the content of this file.</p>
+<p>When the keyword SYSTEM is added to an entity, it will attempt to load content from the specified URL. The value between quote is the URL. For XML parsing done in a small script execute locally, this seems like a nice feature. However, when the parsing is done server side, the URLs from SYSTEM entities are also resolved on the server. A malicious user could point to a file hosted on the remote server. If the server return the parsing result, it will suddenly reveal the content of this file.</p>
 <pre><code>&lt;!DOCTYPE data [
 &lt;!ENTITY xxe SYSTEM &#34;file:///etc/passwd&#34;&gt;
 ]&gt;
@@ -201,19 +201,20 @@
 <p class="image-container"><img alt="Preview website" src="img\3457b453fd3f53ed.png"></p>
 <h2 is-upgraded>Solution</h2>
 <h3 is-upgraded>First exploration</h3>
-<p>When reusing the technique we saw in the previous exercise, we can see that the file content is displaying all in one line. This makes it hard to exfiltrate text files. In many real-world cases, the result will simply not display to the user. The parsing will be done and hidden, or done asynchronously.</p>
+<p>When reusing the technique we saw in the previous exercise, we can see that the file content is displaying all in one line. This makes it hard to exfiltrate text files. In many real-world cases, the result will simply not be displayed to the user. The parsing will be hidden and possibly done asynchronously.</p>
 <p class="image-container"><img alt="Simple XXE test in SVG parser" src="img\21e2152e74c81015.png"></p>
 <h3 is-upgraded>Out-of-bound with the FTP protocol</h3>
 <p>Now, we are going to attempt to exfiltrate the file with the out-of-bound DTD technique. The XML payload will look as follows:</p>
 <p class="image-container"><img alt="XML payload XXE out-of-bound" src="img\3e063b58465a34c1.png"></p>
-<p>The DTD reference in the XML payload is a file that we control. The DTD serve the purpose of concatenation the file content inside a FTP URL.</p>
+<p>The DTD reference in the XML payload is a file that is hosted on a server that we control. The DTD serve the purpose of <strong>concatenating</strong> the file content to the FTP URL.</p>
 <p class="image-container"><img alt="XXE DTD with FTP URL" src="img\8c9309eca0198927.png"></p>
-<p>Instead of using a real FTP server. We will use a dummy one that responds to few FTP command and will display all content received including the password. We are expecting to receive the file content in the password.</p>
+<p>Instead of using a real FTP server. We will use a dummy one that responds to few FTP command and will display all content received including the password. We are expecting to receive the file content in the password. <code>shell-workshop.gosec.co</code> is the host from which you are running the mock FTP server. If are running everything locally, you can use <code>localhost</code>.</p>
 <p class="image-container"><img alt="XXE Dummy FTP" src="img\923bc8cb0adb2f65.png"></p>
+<p>As you can see, the mock FTP service is covering only three FTP commands. You can get <a href="https://github.com/GoSecure/xxe-workshop/tree/master/22_dtd_xxe/solution" target="_blank">the ruby script on the workshop repository</a>.</p>
 <h3 is-upgraded>Sending the XML payload</h3>
 <p>The payload should look like this.</p>
 <p class="image-container"><img alt="XXE Request URL escaped in Burp" src="img\90affef6e5f10a5c.png"></p>
-<p>One easier way to use the encoding tags from the HackVertor plugin. It is a good encoding tool for quickly testing payload without re-encoding the payload on every request.</p>
+<p>One easier way to use the encoding tags from the <a href="https://portswigger.net/bappstore/65033cbd2c344fbabe57ac060b5dd100" target="_blank">HackVertor plugin</a>. It is a good encoding tool for quickly testing payload without re-encoding the payload on every request.</p>
 <p class="image-container"><img alt="XXE Request with Burp HackVertor" src="img\10a3c9a379a4a552.png"></p>
 <h3 is-upgraded>Payload execution</h3>
 <p>Every step of the XML parsing is susceptible to fail due to a small error. If you get result different than the screenshot investigate the potential causes.</p>
@@ -330,8 +331,11 @@
 <li>It reads the <code>file.zip</code></li>
 <li>It delete temporary files.</li>
 </ol>
-<p>What if we manage to stop the sequence at the second step?.. It is possible to do so!</p>
-<h2 is-upgraded>Complement: XSLT</h2>
+<p>What if we manage to stop the sequence at the second step?.. It is possible to do so! The trick is to never close the connection when serving the file on step 2. The client - in this case the web application - will download as much as it can and write the content as it gets. To accomplish this, we need a modified or custom web server that will hang on purpose. You can find two utilities that will serve <a href="https://github.com/GoSecure/xxe-workshop/tree/master/24_write_xxe/solution" target="_blank">this purpose on the Github repository</a> (one in python <code>slow_http_server.py</code> and one in <code>slowserver.jar</code>).</p>
+<p>Once the server has downloadeded your file, you need to find its location by browsing the temp directory. Being random, the file path can&#39;t be predict in advance.</p>
+<p class="image-container"><img alt="Jar" src="img\f2f6f0dffaed41fe.png"></p>
+<p>Writing files in a temporary directory can help escalate another vulnerability that involves a path traversal (such as local file include, template injection, XSLT RCE, deserialization, etc).</p>
+<h2 is-upgraded>Complement: XSLT RCE</h2>
 <aside class="special"><p>This segment is required for the next exercise. This vector is not considered an XXE as it focus on a different feature of XML.</p>
 </aside>
 <p>Extensible Stylesheet Language Transformations (or XSLT) is a text format that describes the transformation applied to XML documents. The official specification provides basic transformation. Languages such as Java and .NET have introduced extension to allow the invocation of method from the stylesheet. The Java implementation is more prone to vulnerability being enabled by default. It has the capability to access all class in the classpath.</p>
@@ -378,7 +382,7 @@ exclude-result-prefixes=&#34;date&#34;&gt;
 <p>In the following stylesheet, we are invoking the methods <code>Runtime.getRuntime().exec(&#34;/bin/busybox ....&#34;)</code>.</p>
 <p class="image-container"><img alt="XSLT payload" src="img\1f193ee88f2d3b0f.png"></p>
 <h3 is-upgraded>Putting the pieces together</h3>
-<p><strong>Step 1: The &#34;slow&#34; HTTP server</strong></p>
+<p><strong>Step 1: Starting the &#34;slow&#34; HTTP server</strong></p>
 <p class="image-container"><img alt="Slow HTTP server" src="img\ec9193e94a053451.png"></p>
 <p><strong>Step 2: Uploading our file</strong></p>
 <p class="image-container"><img alt="Slow HTTP server" src="img\6ef519872a9cc64a.png"></p>
