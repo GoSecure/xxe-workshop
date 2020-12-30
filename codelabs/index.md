@@ -178,7 +178,7 @@ Negative
 
 #### Sending a basic payload
 
-It is always best to start with a simple working XML file rather than submit first with a complex and specific payload. Sometime failure to load our XML can be caused by simple syntax issue. XML can be unforgiving regarding the order of XML syntax, mistyped elements and unsupported characters.
+It is always best to start with a simple working XML file rather than submit first a complex and specific payload. Sometime failure to load our XML can be caused by simple syntax issue. XML can be unforgiving regarding the order of XML syntax, mistyped elements and unsupported characters.
 
 ![Preview website](assets/exercise1/image9.png)
 
@@ -229,7 +229,7 @@ Duration: 00:05:00
 
 XML parsing remotely will not always return content directly. If you are uploading a document such as a data file (`.xml`) or a MS Office document (`.docx`), you might not receive the content parse from those documents.
 
-We need to find a way exfiltrate data **during** the parsing. Unfortunately, it is possible refer to an entity from another entity *in the same DOCTYPE*. This limitation comes from the way XML parsers interpret.
+We need to find a way exfiltrate data **during** the parsing. Unfortunately, it is not possible refer to an entity from another entity *in the same DOCTYPE*. This limitation comes from the way XML parsers interpret the document.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -712,8 +712,7 @@ In summary, here are the steps that will be needed during the XML parsing:
 2. Overrides one of its entities (replace the entity)
 3. Evaluate ELEMENT and ENTITY from the local DTD
 
-The final evaluation should trigger the injection of new entities doing
-the same concatenation trick used in external DTD.
+The final evaluation should trigger the injection of new entities doing the same concatenation trick used in external DTD.
 
 
 ### Final payload
