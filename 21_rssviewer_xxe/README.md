@@ -7,7 +7,6 @@ Here are the tools required to run the web application.
  - Docker
  - Docker-compose
 
-
 ## Build instructions
 
 To compile the sample application run the following Gradle command.

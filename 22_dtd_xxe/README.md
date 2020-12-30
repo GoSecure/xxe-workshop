@@ -2,20 +2,12 @@
 
 Here are the tools required to run the web application.
 
- - Java
- - Gradle
  - Docker
  - Docker-compose
 
-
 ## Build instructions
 
-To compile the sample application run the following Gradle command.
-
-```
-chmod +x gradlew
-./gradlew build
-```
+The application is precompiled in `webapps/ROOT.war`.
 
 ## Launching Docker image
 
