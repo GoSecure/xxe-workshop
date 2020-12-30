@@ -1,6 +1,7 @@
 id: xxe-workshop
 summary: test
 authors: Philippe Arteau
+feedback link: https://github.com/GoSecure/xxe-workshop/issues/
 
 # Advanced XXE Exploitation
 
@@ -819,5 +820,5 @@ From a developer perspective, you can prevent such issue by configuring properly
  - [More examples (Huge list of payload variations)](https://web-in-security.blogspot.com/2016/03/xxe-cheat-sheet.html)
 - [XXE: How to become a Jedi](https://www.slideshare.net/ssuserf09cba/xxe-how-to-become-a-jedi) Many exploitation tips
 - [XXE: The Anatomy of an XML Attack](https://www.owasp.org/images/3/30/XXE_-_The_Anatomy_of_an_XML_Attack_-_Mike_Felch.pdf): Good presentation (list of protocols taken from this one)
-- [OWASP: XML External Entity Prevention Cheat Sheet](https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet)
+- [OWASP: XML External Entity Prevention Cheat Sheet](https://www.owasp.org/index.php/XML_External_Entity_\(XXE\)_Prevention_Cheat_Sheet)
 
