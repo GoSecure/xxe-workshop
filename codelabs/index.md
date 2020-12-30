@@ -34,7 +34,7 @@ Positive
 The first requirement is to have a to have an HTTP interception proxy installed.
 
  - [Burp Suite](https://portswigger.net/burp)
- - [OWASP ZAP](https://portswigger.net/burp)
+ - [OWASP ZAP](https://www.zaproxy.org/)
 
 
 For the infrastructure, you will need:
