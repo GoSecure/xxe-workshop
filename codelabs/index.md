@@ -31,7 +31,7 @@ Positive
 
 ### Requirements
 
-The requirement is to have a to have an HTTP interception proxy installed.
+The first requirement is to have a to have an HTTP interception proxy installed.
 
  - [Burp Suite](https://portswigger.net/burp)
  - [OWASP ZAP](https://portswigger.net/burp)
@@ -41,11 +41,10 @@ For the infrastructure, you will need:
  - [Docker](https://www.docker.com/products/docker-desktop)
  - [Java 8+](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html)
  - [Maven](https://maven.apache.org/) (`apt install maven`)
- 
 
 
 Negative
-: If you only have a web browser, you won't be able to reproduce the steps provided. You can still follow the workshop by reading the content and watching the demonstrations.
+: If you **only** have a web browser, you won't be able to reproduce the steps provided. You can still follow the workshop by reading the content and watching the demonstrations.
 
 ### Deploying Test Applications
 
@@ -87,18 +86,17 @@ XML entities are reference to XML data inside of XML documents. We are mentionin
 
 **Entity in HTML are used for special characters**
 
-![Entity 1](assets/intro/entity1.png)
+![Entity in HTML](assets/intro/entity2.png)
 
 **Entity is being used for a repeated pattern**
 
-![Entity 2](assets/intro/entity2.png)
-
+![Entity use for repeated pattern](assets/intro/entity1.png)
 
 #### SYSTEM or External entities
 
 ![Malicious XXE payload](assets/intro/malicious_payload.png)
 
-When the keyword SYSTEM is added to an entity, it will attempt to load content from the specified URL. The value between quote is the URL. For XML parsing done in a small script execute locally, this seems like a nice feature. However, when the parsing is done server side, the URLs from SYSTEM entities are also resolved on the server. A malicious user could point to a file hosted on the remote server. If the server return the parsing result, the user will suddenly reveal the content of this file.
+When the keyword SYSTEM is added to an entity, it will attempt to load content from the specified URL. The value between quote is the URL. For XML parsing done in a small script execute locally, this seems like a nice feature. However, when the parsing is done server side, the URLs from SYSTEM entities are also resolved on the server. A malicious user could point to a file hosted on the remote server. If the server return the parsing result, it will suddenly reveal the content of this file.
 
 ```xml
 <!DOCTYPE data [
@@ -296,7 +294,7 @@ For this second exercise, we are using a website that render SVG image based on 
 
 #### First exploration
 
-When reusing the technique we saw in the previous exercise, we can see that the file content is displaying all in one line. This makes it hard to exfiltrate text files. In many real-world cases, the result will simply not display to the user. The parsing will be done and hidden, or done asynchronously.
+When reusing the technique we saw in the previous exercise, we can see that the file content is displaying all in one line. This makes it hard to exfiltrate text files. In many real-world cases, the result will simply not be displayed to the user. The parsing will be hidden and possibly done asynchronously.
 
 ![Simple XXE test in SVG parser](assets/exercise2/image5.png)
 
@@ -306,13 +304,15 @@ Now, we are going to attempt to exfiltrate the file with the out-of-bound DTD te
 
 ![XML payload XXE out-of-bound](assets/exercise2/image9.png)
 
-The DTD reference in the XML payload is a file that we control. The DTD serve the purpose of concatenation the file content inside a FTP URL.
+The DTD reference in the XML payload is a file that is hosted on a server that we control. The DTD serve the purpose of **concatenating** the file content to the FTP URL.
 
 ![XXE DTD with FTP URL](assets/exercise2/image10.png)
 
-Instead of using a real FTP server. We will use a dummy one that responds to few FTP command and will display all content received including the password. We are expecting to receive the file content in the password.
+Instead of using a real FTP server. We will use a dummy one that responds to few FTP command and will display all content received including the password. We are expecting to receive the file content in the password. `shell-workshop.gosec.co` is the host from which you are running the mock FTP server. If are running everything locally, you can use `localhost`.
 
 ![XXE Dummy FTP](assets/exercise2/image11.png)
+
+As you can see, the mock FTP service is covering only three FTP commands. You can get [the ruby script on the workshop repository](https://github.com/GoSecure/xxe-workshop/tree/master/22_dtd_xxe/solution).
 
 
 #### Sending the XML payload
@@ -321,7 +321,7 @@ The payload should look like this.
 
 ![XXE Request URL escaped in Burp](assets/exercise2/image14.png)
 
-One easier way to use the encoding tags from the HackVertor plugin. It is a good encoding tool for quickly testing payload without re-encoding the payload on every request.
+One easier way to use the encoding tags from the [HackVertor plugin](https://portswigger.net/bappstore/65033cbd2c344fbabe57ac060b5dd100). It is a good encoding tool for quickly testing payload without re-encoding the payload on every request.
 
 ![XXE Request with Burp HackVertor](assets/exercise2/image15.png)
 
@@ -375,7 +375,7 @@ Reference: [php:// - php.net documentation](https://www.php.net/manual/en/wrappe
 
 With this new capability, it opens the door to read most configuration files, database files and more.
 
-=========
+
 
 
 ### Other interesting protocols
@@ -460,6 +460,8 @@ For this third exercise, we are using a website that is very similar to the firs
 
 Similarly to the first exercise, we are going to host a malicious Atom feed on a web server. This XML document will use PHP base64-encoding filter inside an XML entity.
 
+We are targeting the file `/.svn/wc.db` a metadata file containing SVN history information. Hopefully, we can obtain additional information on the codebase.
+
 ![XXE PHP filter payload](assets/exercise3/image5.png)
 
 The response will be in Base64 because, this is what we instruct the server to do with the filter. To read the original content, we can decode it with a variety of decoding tools. In Burp, you can press **Ctrl-B** to decode your selection.
@@ -470,6 +472,7 @@ The response will be in Base64 because, this is what we instruct the server to d
 Positive
 : To read the `.svn/wc.db`, you have two options. You can either loaded it with a SQLite client or simply look at it in a text editor. The first option would scale better with large repository history.
 
+For the `.svn/wc.db` file extracted, we can see filenames are exposed including some pages we did not know exist!
 
 #### Hidden page
 
@@ -529,9 +532,15 @@ What is happening behind the scenes with the HTTP URL with a remote ZIP? There a
 4. It reads the `file.zip`
 5. It delete temporary files.
 
-What if we manage to stop the sequence at the second step?.. It is possible to do so!
+What if we manage to stop the sequence at the second step?.. It is possible to do so! The trick is to never close the connection when serving the file on step 2. The client - in this case the web application - will download as much as it can and write the content as it gets. To accomplish this, we need a modified or custom web server that will hang on purpose. You can find two utilities that will serve [this purpose on the Github repository](https://github.com/GoSecure/xxe-workshop/tree/master/24_write_xxe/solution) (one in python `slow_http_server.py` and one in `slowserver.jar`). 
 
-### Complement: XSLT
+Once the server has downloadeded your file, you need to find its location by browsing the temp directory. Being random, the file path can't be predict in advance.
+
+![Jar](assets/jar/temp_file.png)
+
+Writing files in a temporary directory can help escalate another vulnerability that involves a path traversal (such as local file include, template injection, XSLT RCE, deserialization, etc).
+
+### Complement: XSLT RCE
 
 Positive
 : This segment is required for the next exercise. This vector is not considered an XXE as it focus on a different feature of XML.
@@ -618,7 +627,7 @@ In the following stylesheet, we are invoking the methods `Runtime.getRuntime().e
 
 #### Putting the pieces together
 
-**Step 1: The "slow" HTTP server**
+**Step 1: Starting the "slow" HTTP server**
 
 ![Slow HTTP server](assets/exercise4/jar_slow_server.png)
 
@@ -658,18 +667,18 @@ Duration: 00:05:00
 
 ### The problem
 
-If the **XML parsed is not returned** and **the network side-channel are not possible** (aggressive network filter), would the XML parser be vulnerable in this case? This case was for a few years consider unexploitable.
+If the **XML parsed is not returned** and **the network out-of-bound channel is not possible** (aggressive network filter), would the XML parser be vulnerable in this case? This case was for a few years consider unexploitable.
 
 ### Error-based exfiltration
 
 ![Filename exception](assets/local-dtd/filename_exception.png)
 
-One of the remaining channel is the error messages. This channel is available if the application is configured to returned detail error messages.
+One of the remaining channels is the error messages. This channel is available if the application is configured to returned detail error messages.
 
 ### Method without external DTD
 
 Can we do a concatenation trick without external DTD ? The short answer to the problem is: Yes we can! 
-Arseniy Sharoglazov found [an interesting technique that allows us to use an local DTD instead of an external DTD](https://mohemiv.com/all/exploiting-xxe-with-local-dtd-files/).
+Arseniy Sharoglazov found [an interesting technique that allows us to use a local DTD instead of an external DTD](https://mohemiv.com/all/exploiting-xxe-with-local-dtd-files/).
 
 
 We need to find an entity that is declared and use in the same DTD. Here is an example taken from `/usr/share/xml/fontconfig/fonts.dtd`.
@@ -680,7 +689,7 @@ We need to find an entity that is declared and use in the same DTD. Here is an e
 […]
 ```
 
-If we replace the `constant` entity by the following XML injection. It would allows us to evaluate arbirary XML. Our objective is going to do a concatenation within this injection point.
+If we replace the `constant` entity by the following XML injection. It would allow us to evaluate arbitrary XML. Our objective is going to do a concatenation within this injection point.
 ```xml
 <!ENTITY % constant '>[MALICIOUS]<!ELEMENT dummy(123 '>
 
@@ -693,14 +702,14 @@ The malicious XML we are looking to inject in the `[MALICIOUS]` placeholder is t
 <!ENTITY % eval "<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>">
 ```
 
-When `%eval` will be evaluated the concatenation will occurs.
+When `%eval` will be evaluated, the concatenation will occur.
 
 ### Overview
 
 In summary, here are the steps that will be needed during the XML parsing:
 
 1. Initialize local DTD
-2. Overrides one of its entity (replace the entity)
+2. Overrides one of its entities (replace the entity)
 3. Evaluate ELEMENT and ENTITY from the local DTD
 
 The final evaluation should trigger the injection of new entities doing
@@ -730,8 +739,13 @@ dummy(123 '>
 
 To see it in action, pass to the next section.
 
-If you want to know more about the different injection patterns, visit this blog post: [Automating local DTD discovery for XXE exploitation
-](https://www.gosecure.net/blog/2019/07/16/automating-local-dtd-discovery-for-xxe-exploitation/).
+If you want to know more about the different injection patterns, visit this blog post: [Automating local DTD discovery for XXE exploitation](https://www.gosecure.net/blog/2019/07/16/automating-local-dtd-discovery-for-xxe-exploitation/).
+
+
+
+
+
+
 
 <!-- =========================== -->
 
@@ -752,7 +766,7 @@ At first, we need to build a base payload that simply trigger a `FileNotFoundExc
 
 #### Using Intruder to Brute Force DTD
 
-In order to find if at least one interesting DTD is present on the remote server, we are going to need to brute-force it with a [huge list of potential paths](https://raw.githubusercontent.com/GoSecure/dtd-finder/master/list/dtd_files.txt).
+In order to find if at least one interesting DTD is present on the remote server, we are going to need to brute force it with a [huge list of potential paths](https://raw.githubusercontent.com/GoSecure/dtd-finder/master/list/dtd_files.txt).
 
 ![Request to intruder](assets/exercise5/image12.png)
 
@@ -775,12 +789,12 @@ Intruder is not showing the initial value from our list, but the final value enc
 
 Once a DTD with a known *overridable* entity is found, we can start to poke at files to exfiltrate.
 
-You can reuse a XXE payload from [this list](https://github.com/GoSecure/dtd-finder/blob/master/list/xxe_payloads.md). Only the `file` entity need to be change. The path to the DTD (`local_dtd`) and the dummy path (`/nonexistant`) will be unmodified.
+You can reuse a XXE payload from [this list](https://github.com/GoSecure/dtd-finder/blob/master/list/xxe_payloads.md). Only the `file` entity needs to be changed. The path to the DTD (`local_dtd`) and the dummy path (`/nonexistant`) will be unmodified.
 
 ![File content received](assets/exercise5/image11.png)
 
 
-You can view the complete attack in this video.
+You can view the complete attack in [this video](https://www.youtube.com/watch?v=lGz5MOUz7Ws).
 
 <video id="lGz5MOUz7Ws"></video>
 
@@ -793,9 +807,9 @@ You can view the complete attack in this video.
 ## Conclusion
 Duration: 00:01:00
 
-Misconfigured XML parser can open doors to attackers. Being able to read files on the vulnerable server is the main consern. But as you saw in this workshop, being able to read key files can lead to escalating to remote command execution.
+Misconfigured XML parser can open doors to attackers. Being able to read files on the vulnerable server is the main concern. But as you saw in this workshop, being able to read key files can lead to escalating to remote command execution.
 
-From a developper perspective, you can prevent such issue by configuring properly the XML parser in used in your application. Few librairies have secure configuration by default but it is best to verify with a reference such as the OWASP Cheat Sheet in the reference below.
+From a developer perspective, you can prevent such issue by configuring properly the XML parser in used in your application. Few libraries have secure configuration by default but it is best to verify with a reference such as the OWASP Cheat Sheet in the reference below.
 
 
 ### References
