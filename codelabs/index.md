@@ -12,7 +12,7 @@ Duration: 00:05:00
 
 Welcome to this 3-hour workshop on XML External Entities (XXE) exploitation!
 
-In this workshop, the latest XML eXternal Entities (XXE) and XML related attack vectors will be presented. XXE is a vulnerability that affects any XML parser that evaluates external entities. It is gaining more visibility with its introduction to the [OWASP Top10 2017 (A4)](https://owasp.org/www-project-top-ten/2017/A4_2017-XML_External_Entities_(XXE).html). You might be able to detect the classic patterns, but can you convert the vulnerability into directory file listing, binary file exfiltration, file write or remote code execution?
+In this workshop, the latest XML eXternal Entities (XXE) and XML related attack vectors will be presented. XXE is a vulnerability that affects any XML parser that evaluates external entities. It is gaining more visibility with its introduction to the [OWASP Top10 2017 (A4)](https://owasp.org/www-project-top-ten/2017/A4_2017-XML_External_Entities_\(XXE\).html). You might be able to detect the classic patterns, but can you convert the vulnerability into directory file listing, binary file exfiltration, file write or remote code execution?
 
 
 The focus of this workshop will be presenting various techniques and exploitation tricks for both PHP and Java applications. Four applications will be at your disposition to test your skills. For every exercise, sample payloads will be given so that the attendees save some time. 
