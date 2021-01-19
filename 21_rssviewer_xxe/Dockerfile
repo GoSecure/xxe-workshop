@@ -1,4 +1,4 @@
-FROM frolvlad/alpine-java:jre8-slim
+FROM frolvlad/alpine-java
 VOLUME /tmp
 
 COPY build/libs/rssviewer-0.0.1-SNAPSHOT.jar app.jar
