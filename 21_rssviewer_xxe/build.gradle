@@ -8,14 +8,12 @@ buildscript {
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-		classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.5")
 	}
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'spring-boot'
-apply plugin: 'org.sonarqube'
 
 jar {
 	baseName = 'rssviewer'
@@ -29,13 +27,14 @@ repositories {
 	mavenCentral()
 }
 
+springBoot {
+  mainClass = "net.gosecure.rssviewer.App1Application"
+}
 
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.springframework.boot:spring-boot-starter-thymeleaf')
 	compile('org.thymeleaf.extras:thymeleaf-extras-java8time')
-	//compile('org.springframework.boot:spring-boot-starter-actuator')
-	//compile('org.springframework.boot:spring-boot-starter-remote-shell')
 
 	compile('com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:r239')
 
@@ -43,12 +42,4 @@ dependencies {
 	compile('org.webjars:jquery:2.2.1')
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')
-}
-
-sonarqube {
-  properties {
-    property "sonar.projectName", "RssViewer"
-    property "sonar.projectVersion", "0.0.1-SNAPSHOT"
-    property "sonar.projectKey", "net.gosecure:rssviewer"
-  }
 }
