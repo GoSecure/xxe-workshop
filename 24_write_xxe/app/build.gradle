@@ -8,14 +8,12 @@ buildscript {
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-        classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.5")
     }
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'spring-boot'
-apply plugin: 'org.sonarqube'
 
 jar {
     baseName = 'books'
@@ -29,6 +27,10 @@ repositories {
     mavenCentral()
 }
 
+
+springBoot {
+  mainClass = "net.gosecure.books.App1Application"
+}
 
 dependencies {
     compile('org.springframework.boot:spring-boot-starter-web')
@@ -50,12 +52,4 @@ dependencies {
     compile('commons-io:commons-io:2.5')
 
     testCompile('org.springframework.boot:spring-boot-starter-test')
-}
-
-sonarqube {
-    properties {
-        property "sonar.projectName", "Books"
-        property "sonar.projectVersion", "0.0.1-SNAPSHOT"
-        property "sonar.projectKey", "net.gosecure:books"
-    }
 }
