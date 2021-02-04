@@ -2,6 +2,7 @@ id: xxe-workshop
 summary: test
 authors: Philippe Arteau
 feedback link: https://github.com/GoSecure/xxe-workshop/issues/
+analytics account: UA-153352998-3
 
 # Advanced XXE Exploitation
 
