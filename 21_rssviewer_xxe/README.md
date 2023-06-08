@@ -2,7 +2,7 @@
 
 Here are the tools required to run the web application.
 
- - Java
+ - Java 8 (JRE+JDK)
  - Gradle
  - Docker
  - Docker-compose
